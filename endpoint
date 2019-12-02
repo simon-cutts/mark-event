@@ -1,0 +1,33 @@
+WARNING! These are just my run notes
+
+mvn clean package ; sam package --output-template-file packaged.yml --s3-bucket customer-record \
+    ; sam deploy --template-file ./packaged.yml --stack-name mark-event --capabilities CAPABILITY_IAM \
+    ; aws cloudformation describe-stacks --stack-name mark-event
+
+time  curl https://vrda2e6k60.execute-api.eu-west-2.amazonaws.com/Prod
+
+aws cloudformation describe-stack-events --stack-name mark-event
+
+aws cloudformation delete-stack --stack-name mark-event
+
+sam logs -n SomApiAppFunction --stack-name mark-event
+
+
+time curl -H "Content-Type: application/json" -X POST https://vrda2e6k60.execute-api.eu-west-2.amazonaws.com/Prod/mark/v1/entitlement -d '
+{
+  "mark": "AFC F7",
+  "eventTime": "2019-11-29T09:26:43.837Z",
+  "price": 299,
+  "entitlement": {
+    "certificateNo": "EV56RP259VQP8G423H65",
+    "nomineeName": "Mr John Jones",
+    "certificateTime": "2019-11-29T09:26:43.786Z",
+    "purchaserName": "Felicity Jones",
+    "address": {
+      "addLine1": "2 My Street",
+      "addLine2": "Redwood",
+      "postTown": "Swansea",
+      "postcode": "SW1 4RT"
+    }
+  }
+}'
