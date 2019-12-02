@@ -1,17 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: AWS SomApiApp API - mark-event::mark-event-app
+
 Globals:
-  Function:
-    Environment:
-      Variables:
-        DYNAMODB_STREAM_ARN: arn:aws:dynamodb:eu-west-2:022099488461:table/RegistrationNumberEvent/stream/2019-12-02T13:40:24.840
   Api:
     EndpointConfiguration: REGIONAL
 
 Resources:
   # Lambda listens to a DynamoDB stream on the RegistrationNumberEventDynamoDBTable and writes the
-  # data to KinesisStream
+  # data to Kinesis stream
   ProcessDynamoDBStream:
     Type: AWS::Serverless::Function
     Properties:
@@ -30,13 +27,11 @@ Resources:
         Stream:
           Type: DynamoDB
           Properties:
-            Stream: arn:aws:dynamodb:eu-west-2:022099488461:table/RegistrationNumberEvent/stream/2019-12-02T14:37:35.528
+            Stream: !ImportValue DynamoDBStreamArn
             BatchSize: 1
             StartingPosition: TRIM_HORIZON
 
-  # Lambda listens to KinesisStream and writes the events to the S3 EventBucket
-  # Normally this lambda would be in a separate project as it is a client of the event stream. Only included
-  # here for illustration purposes :-)
+  # Lambda listens to Kinesis stream and writes the events to the S3 EventBucket
   ProcessKinesisStreamS3:
     Type: AWS::Serverless::Function
     Properties:
@@ -84,6 +79,10 @@ Outputs:
   StreamARN:
     Description: "Kinesis Stream ARN"
     Value: !GetAtt KinesisStream.Arn
+    Export:
+      Name: MarkEventKinesisStreamArn
   ConsumerARN:
     Description: "Stream consumer ARN"
     Value: !GetAtt StreamConsumer.ConsumerARN
+    Export:
+      Name: MarkEventStreamConsumeArn
