@@ -1,21 +1,21 @@
-# mark-event
+# mark-event-stream
 
 ![mark](mark-api.png)
 
-This applications depicted above, mark-api and mark-event, are intended as a strawman to demonstrate the benefits of a light-weight, purely serverless event sourcing system. Event sourcing stores every state change to the application as an event object. These event objects are stored in the sequence they were applied for the lifetime of the application.
+This applications depicted above, mark-api and mark-event-stream, are intended as a strawman to demonstrate the benefits of a light-weight, purely serverless event sourcing system. Event sourcing stores every state change to the application as an event object. These event objects are stored in the sequence they were applied for the lifetime of the application.
 
-This mark-event application has a companion application, [mark-api](https://github.com/simon-cutts/mark-api). The mark-api app is a microservice managing marks; mark-event is an application consuming the events produced from mark-api.
+This mark-event-stream application has a companion application, [mark-api](https://github.com/simon-cutts/mark-api). The mark-api app is a microservice managing marks; mark-event-stream is an application consuming the events produced from mark-api.
 
 Serverless was chosen to simplify the infrastructure with minimal dev ops; but, just as importantly, to use native cloud services rather than rely non-trivial specialist event sourced application frameworks. 
 
 ### Event Stream
 
-Events traverse the event stream to notify downstream clients. The event stream is a combination of mark-api and mark-event; its transactional and comprises:
+Events traverse the event stream to notify downstream clients. The event stream is a combination of mark-api and mark-event-stream; its transactional and comprises:
 
 1. From mark-api, a DynamoDB stream from the `RegistrationNumberEvent` table, emits transactional, reliable, time ordered sequence of events. Events remain in `RegistrationNumberEvent` for the lifetime of the mark-api application 
-2. The `DynamoDbStreamProcessor` lambda in the mark-event app picks data off the DynamoDB stream and reassembles it into a JSON representation of the event. This event is then written to the kinesis stream`KinesisStream` within mark-event.
-3. The `KinesisStream` from mark-event maintains the same time ordered sequence of events that can be fanned out to multiple interested clients
-4. The `KinesisStreamS3Processor` lambda within mark-event is an example of a HTTP/2 Kinesis client using [enhanced fan-out](https://docs.aws.amazon.com/streams/latest/dev/introduction-to-enhanced-consumers.html) to read from the stream. It writes the events to S3. Multiple other enhanced fan-out Lambdas could also access the same stream, acting independently of each other, maintaining their own transactional view of the stream 
+2. The `DynamoDbStreamProcessor` lambda in the mark-event-stream app picks data off the DynamoDB stream and reassembles it into a JSON representation of the event. This event is then written to the kinesis stream`KinesisStream` within mark-event-stream.
+3. The `KinesisStream` from mark-event-stream maintains the same time ordered sequence of events that can be fanned out to multiple interested clients
+4. The `KinesisStreamS3Processor` lambda within mark-event-stream is an example of a HTTP/2 Kinesis client using [enhanced fan-out](https://docs.aws.amazon.com/streams/latest/dev/introduction-to-enhanced-consumers.html) to read from the stream. It writes the events to S3. Multiple other enhanced fan-out Lambdas could also access the same stream, acting independently of each other, maintaining their own transactional view of the stream 
 
 ### Outstanding Tasks
 
