@@ -10,10 +10,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sighware.mark.server.event.RegistrationNumberEvent;
+import com.sighware.mark.util.JsonUtil;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -29,8 +27,6 @@ public class DynamoDbStreamProcessor implements
 
     private static final String KINESIS_STREAM_NAME = System.getenv("KINESIS_STREAM_NAME");
     private final AmazonKinesis kinesis = AmazonKinesisClientBuilder.defaultClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
 
     public String handleRequest(DynamodbEvent ddbEvent, Context context) {
 
@@ -52,22 +48,19 @@ public class DynamoDbStreamProcessor implements
                     System.out.println(json);
 
                     // Now write customer event to kinesis stream
-                    RegistrationNumberEvent event = null;
-                    try {
-                        event = objectMapper.readValue(json, RegistrationNumberEvent.class);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
                     ByteBuffer data = ByteBuffer.wrap(json.getBytes(StandardCharsets.UTF_8));
 
                     // Ensure the records are written in sequence order
+                    String mark = JsonUtil.getMark(json);
+                    String createTime = JsonUtil.getCreateTime(json);
+
                     if (sequence == null) {
                         PutRecordResult r = kinesis.putRecord(KINESIS_STREAM_NAME, data,
-                                event.getMark() + "-" + event.getCreateTime());
+                                mark + "-" + createTime);
                         sequence = r.getSequenceNumber();
                     } else {
                         PutRecordResult r = kinesis.putRecord(KINESIS_STREAM_NAME, data,
-                                event.getMark() + "-" + event.getCreateTime(), sequence);
+                                mark + "-" + createTime, sequence);
                         sequence = r.getSequenceNumber();
                     }
                 }
